@@ -1,58 +1,210 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XYZW 游戏管理系统</title>
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="XYZW助手" />
+    <meta name="description" content="咸鱼游戏自动化web平台 - Token管理、WebSocket通信、游戏自动化" />
+    <meta name="keywords" content="咸鱼,游戏助手,Token管理,自动化,WebSocket" />
+    <meta name="author" content="XYZW Team" />
     
-    body {
-      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-    }
+    <title>XYZW 游戏管理系统</title>
     
-    #app {
-      min-height: 100vh;
-    }
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="/xyzw-token-manager/manifest.json" />
+    <link rel="apple-touch-icon" href="/xyzw-token-manager/icons/xiaoyugan.png" />
+    <link rel="icon" type="image/png" href="/xyzw-token-manager/icons/xiaoyugan.png" />
     
-    .loading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      color: white;
-      font-size: 18px;
-    }
-  </style>
-  <script type="module" crossorigin src="/xyzw-token-manager/assets/index-gM6c0Edx.js"></script>
-  <link rel="stylesheet" crossorigin href="/xyzw-token-manager/assets/index-ByGHMbP3.css">
-</head>
-<body>
-  <div id="app">
-    <div class="loading">正在加载应用...</div>
-  </div>
-  
-<script>
-  // ȫ�ִ��󲶻����ڵ���
-  window.addEventListener('error', function(e) {
-    var el = document.getElementById('app');
-    if (el) {
-      el.innerHTML = '<div style="color:red;padding:20px;background:white;font-family:monospace;"><h2>JS Error:</h2><pre>' + e.message + '\n' + e.filename + ':' + e.lineno + ':' + e.colno + '</pre></div>';
-    }
-  });
-  window.addEventListener('unhandledrejection', function(e) {
-    var el = document.getElementById('app');
-    if (el) {
-      el.innerHTML = '<div style="color:red;padding:20px;background:white;font-family:monospace;"><h2>Promise Error:</h2><pre>' + e.reason + '</pre></div>';
-    }
-  });
-</script>
-</body>
+    <!-- 预加载关键资源 -->
+    <link rel="preconnect" href="https://xxz-xyzw.hortorgames.com" />
+    <link rel="dns-prefetch" href="https://xxz-xyzw.hortorgames.com" />
+    
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        height: 100%;
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        font-family:
+          "SF Pro Display",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "PingFang SC",
+          "Hiragino Sans GB",
+          "Microsoft YaHei",
+          "Helvetica Neue",
+          Helvetica,
+          Arial,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        min-height: 100dvh; /* 动态视口高度 */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      #app {
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        height: 100dvh;
+        color: white;
+        font-size: 18px;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* 离线提示样式 */
+      .offline-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #ff6b6b;
+        color: white;
+        text-align: center;
+        padding: 8px;
+        font-size: 14px;
+        z-index: 9999;
+        transform: translateY(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .offline-indicator.show {
+        transform: translateY(0);
+      }
+
+      /* 更新提示样式 */
+      .update-toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #333;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 9999;
+        opacity: 0;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .update-toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      .update-toast button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .update-toast button:hover {
+        background: #5a67d8;
+      }
+    </style>
+    <script type="module" crossorigin src="/xyzw-token-manager/assets/index-PqhTsHii.js"></script>
+    <link rel="modulepreload" crossorigin href="/xyzw-token-manager/assets/router-DMeErcmF.js">
+    <link rel="modulepreload" crossorigin href="/xyzw-token-manager/assets/date-fns-DvbLb_LR.js">
+    <link rel="modulepreload" crossorigin href="/xyzw-token-manager/assets/ui-CVD5VXFL.js">
+    <link rel="stylesheet" crossorigin href="/xyzw-token-manager/assets/index-DfjBlv13.css">
+  </head>
+  <body>
+    <!-- 离线提示 -->
+    <div id="offline-indicator" class="offline-indicator">
+      网络已断开，部分功能可能无法使用
+    </div>
+
+    <!-- 更新提示 -->
+    <div id="update-toast" class="update-toast">
+      <span>发现新版本</span>
+      <button onclick="updateApp()">立即更新</button>
+    </div>
+
+    <div id="app">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <span>正在加载应用...</span>
+      </div>
+    </div>
+
+    <!-- Vite 构建时会自动注入打包后的脚本 -->
+
+    <!-- PWA 支持脚本 -->
+    <script>
+      // 离线状态检测
+      function updateOnlineStatus() {
+        const indicator = document.getElementById('offline-indicator');
+        if (!navigator.onLine) {
+          indicator.classList.add('show');
+        } else {
+          indicator.classList.remove('show');
+        }
+      }
+
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+
+      // 更新应用函数
+      function updateApp() {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+          window.location.reload();
+        }
+      }
+
+      // 监听 Service Worker 消息
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+            const toast = document.getElementById('update-toast');
+            toast.classList.add('show');
+          }
+        });
+      }
+    </script>
+  </body>
 </html>

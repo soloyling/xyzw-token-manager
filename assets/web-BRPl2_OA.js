@@ -1,0 +1,1 @@
+import{W as n}from"./index-PqhTsHii.js";import"./router-DMeErcmF.js";import"./ui-CVD5VXFL.js";import"./date-fns-DvbLb_LR.js";class p extends n{async show(e){}async hide(e){}}export{p as SplashScreenWeb};
